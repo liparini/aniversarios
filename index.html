@@ -334,11 +334,13 @@ import {
 const MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const MONTHS_LC=MONTHS.map(m=>m.toLowerCase());
 const MONTHS_SHORT=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+/* cada texto tem 3 formas: masculino, feminino e neutro (quando o sexo não foi informado) */
 const REL={
-  filho:{direct:'Filho(a) de',inverse:'Pai/mãe de',rank:{d:0,i:3}},
-  conjuge:{direct:'Cônjuge de',inverse:'Cônjuge de',rank:{d:1,i:1}},
-  irmao:{direct:'Irmão(ã) de',inverse:'Irmão(ã) de',rank:{d:2,i:2}}
+  filho:{direct:['Filho de','Filha de','Filho(a) de'],inverse:['Pai de','Mãe de','Pai/mãe de'],rank:{d:0,i:3}},
+  conjuge:{direct:['Cônjuge de','Cônjuge de','Cônjuge de'],inverse:['Cônjuge de','Cônjuge de','Cônjuge de'],rank:{d:1,i:1}},
+  irmao:{direct:['Irmão de','Irmã de','Irmão(ã) de'],inverse:['Irmão de','Irmã de','Irmão(ã) de'],rank:{d:2,i:2}}
 };
+const pick=(p,t)=>p&&p.sex==='m'?t[0]:p&&p.sex==='f'?t[1]:t[2];
 
 const state={
   people:[],loaded:false,locked:false,configLoaded:false,authReady:false,authed:false,
@@ -407,7 +409,7 @@ function relationsOf(id){
   for(const l of ((me&&me.links)||[])){
     if(!byId.has(l.to)||!REL[l.type]) continue;
     seen.add(l.type+':'+l.to);
-    out.push({type:l.type,label:REL[l.type].direct,id:l.to,rank:REL[l.type].rank.d});
+    out.push({type:l.type,label:pick(me,REL[l.type].direct),id:l.to,rank:REL[l.type].rank.d});
   }
   for(const q of state.people){
     if(q.id===id) continue;
@@ -416,7 +418,7 @@ function relationsOf(id){
       const key=l.type+':'+q.id;
       if(l.type!=='filho'&&seen.has(key)) continue;
       seen.add(key);
-      out.push({type:l.type,label:REL[l.type].inverse,id:q.id,rank:REL[l.type].rank.i});
+      out.push({type:l.type,label:pick(me,REL[l.type].inverse),id:q.id,rank:REL[l.type].rank.i});
     }
   }
   out.sort((a,b)=>a.rank-b.rank);
@@ -547,10 +549,10 @@ function siblingsOf(id){
   for(const l of ((me&&me.links)||[])) if(l.type==='irmao') ids.add(l.to);
   return state.people.filter(p=>p.id!==id&&ids.has(p.id)).sort(byAge);
 }
-const ANC=['Pai/mãe','Avô(ó)','Bisavô(ó)','Trisavô(ó)'];
-const DESC=['Filho(a)','Neto(a)','Bisneto(a)','Trineto(a)'];
-const ancLabel=n=>ANC[n-1]||'Ancestral';
-const descLabel=n=>DESC[n-1]||'Descendente';
+const ANC=[['Pai','Mãe','Pai/mãe'],['Avô','Avó','Avô(ó)'],['Bisavô','Bisavó','Bisavô(ó)'],['Trisavô','Trisavó','Trisavô(ó)']];
+const DESC=[['Filho','Filha','Filho(a)'],['Neto','Neta','Neto(a)'],['Bisneto','Bisneta','Bisneto(a)'],['Trineto','Trineta','Trineto(a)']];
+const ancLabel=(n,p)=>ANC[n-1]?pick(p,ANC[n-1]):'Ancestral';
+const descLabel=(n,p)=>DESC[n-1]?pick(p,DESC[n-1]):'Descendente';
 
 function treeCard(p,label,focus){
   const date=p.day+' '+MONTHS_SHORT[p.month-1]+(p.year?' '+p.year:'');
@@ -570,13 +572,13 @@ function ancNode(p,gen,path){
     const np=new Set(path);np.add(p.id);
     el.append(h('div',{class:'pars'},pars.map(x=>ancNode(x,gen+1,np))));
   }
-  el.append(h('div',{class:'unit'},treeCard(p,ancLabel(gen),false)));
+  el.append(h('div',{class:'unit'},treeCard(p,ancLabel(gen,p),false)));
   return el;
 }
 function descNode(p,gen,path,focus){
   const spouses=spousesOf(p.id).filter(s=>!path.has(s.id));
   const node=h('div',{class:'tn'},
-    h('div',{class:'unit'},treeCard(p,focus?null:descLabel(gen),focus),spouses.map(s=>treeCard(s,'Cônjuge',false))));
+    h('div',{class:'unit'},treeCard(p,focus?null:descLabel(gen,p),focus),spouses.map(s=>treeCard(s,'Cônjuge',false))));
   if(gen<5){
     const np=new Set(path);np.add(p.id);spouses.forEach(s=>np.add(s.id));
     const seen=new Set();const kids=[];
@@ -601,7 +603,7 @@ function buildTree(id){
   }
   const row=[me,...sibs].sort(byAge).map(x=>x.id===id
     ?descNode(me,0,new Set(),true)
-    :h('div',{class:'tn'},h('div',{class:'unit'},treeCard(x,'Irmão(ã)',false))));
+    :h('div',{class:'tn'},h('div',{class:'unit'},treeCard(x,pick(x,['Irmão','Irmã','Irmão(ã)']),false))));
   tree.append(h('div',{class:'kids sibrow'+(pars.length?'':' nobars')},row));
   return tree;
 }
@@ -695,6 +697,12 @@ function openForm(id){
   const yearI=h('input',{id:'f-year',type:'number',inputmode:'numeric',min:'1900',max:String(thisYear),placeholder:'Opcional',value:existing&&existing.year?existing.year:''});
   const noteI=h('input',{id:'f-note',type:'text',maxlength:'160',autocomplete:'off',placeholder:'Opcional: apelido, lembrete…',value:existing?existing.note||'':''});
 
+  const sexS=h('select',{id:'f-sex'},
+    h('option',{value:'',text:'Prefiro não informar'}),
+    h('option',{value:'m',text:'Masculino'}),
+    h('option',{value:'f',text:'Feminino'}));
+  sexS.value=existing&&existing.sex?existing.sex:'';
+
   const linksBox=h('div',{class:'linkbox'});
   function renderLinks(){
     linksBox.replaceChildren();
@@ -704,7 +712,7 @@ function openForm(id){
     }
     links.forEach((l,i)=>{
       const typeS=h('select',{'aria-label':'Tipo de vínculo',onchange:e=>{l.type=e.target.value;}},
-        Object.entries(REL).map(([k,v])=>h('option',{value:k,text:v.direct})));
+        Object.entries(REL).map(([k,v])=>h('option',{value:k,text:v.direct[2]})));
       typeS.value=l.type;
       const perS=h('select',{'aria-label':'Pessoa vinculada',onchange:e=>{l.to=e.target.value;}},
         h('option',{value:'',text:'Escolha a pessoa'}),others.map(o=>h('option',{value:o.id,text:o.name})));
@@ -750,7 +758,7 @@ function openForm(id){
 
       saveBtn.disabled=true;saveBtn.textContent='Salvando…';
       const ref=id?doc(db,'people',id):doc(collection(db,'people'));
-      await setDoc(ref,{name,day,month,year,note:noteI.value.trim(),links:clean});
+      await setDoc(ref,{name,day,month,year,sex:sexS.value,note:noteI.value.trim(),links:clean});
       toast(id?'Alterações salvas.':name+' foi adicionado(a).');
       openFicha(ref.id);
     }catch(x){
@@ -764,6 +772,8 @@ function openForm(id){
       h('div',{class:'field'},h('label',{for:'f-month',text:'Mês'}),monthS),
       h('div',{class:'field'},h('label',{for:'f-year',text:'Ano'}),yearI)),
     h('p',{class:'hint',text:'O ano é opcional. Com o ano, a página mostra quantos anos a pessoa faz.'}),
+    h('div',{class:'field'},h('label',{for:'f-sex',text:'Sexo'}),sexS,
+      h('p',{class:'hint',text:'Opcional. Define se aparece Pai ou Mãe, Avô ou Avó, Filho ou Filha, Irmão ou Irmã.'})),
     h('div',{class:'field'},h('label',{for:'f-note',text:'Observação'}),noteI),
     h('div',{class:'section'},h('h3',{text:'Vínculos'}),
       h('p',{class:'hint',text:'Por exemplo: Filho(a) de Sicrano. O vínculo também aparece na ficha de Sicrano.'}),linksBox),

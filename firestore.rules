@@ -16,11 +16,12 @@ service cloud.firestore {
     }
 
     function validPerson(d) {
-      return d.keys().hasOnly(['name', 'day', 'month', 'year', 'note', 'links'])
+      return d.keys().hasOnly(['name', 'day', 'month', 'year', 'sex', 'note', 'links'])
         && d.name is string && d.name.size() > 0 && d.name.size() <= 80
         && d.day is int && d.day >= 1 && d.day <= 31
         && d.month is int && d.month >= 1 && d.month <= 12
         && (d.year == null || (d.year is int && d.year >= 1900 && d.year <= 2100))
+        && (!('sex' in d) || d.sex in ['', 'm', 'f'])
         && d.note is string && d.note.size() <= 160
         && d.links is list && d.links.size() <= 20;
     }

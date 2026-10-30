@@ -214,25 +214,29 @@ h1{font-size:clamp(1.8rem,5.5vw,2.7rem);font-weight:700;letter-spacing:-.02em}
 .panel.wide{max-width:960px}
 .treebox{display:flex;flex-direction:column;gap:8px;min-width:0}
 .treewrap{
-  min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden;
+  min-width:0;max-width:100%;overflow:auto;
+  scrollbar-width:thin;scrollbar-color:var(--tree-line) transparent;cursor:grab;user-select:none;
   padding:18px 8px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);
 }
-.tree{--g:22px;--tl:var(--tree-line);display:flex;flex-direction:column;align-items:center;width:max-content;min-width:100%}
+.tree{--g:22px;--tl:var(--tree-line);display:flex;flex-direction:column;align-items:flex-start;width:max-content;margin:0 auto}
+.upper{display:flex;flex-direction:column;align-items:center}
 .pars,.kids{display:flex;justify-content:center;position:relative}
 .pars{align-items:flex-end}
 .kids{align-items:flex-start}
+.kids.sibrow{align-items:stretch}
+.sibrow>.tn>.unit{flex:1}
 
 /* descendentes e linha dos irmãos: linhas descem */
 .kids{padding-top:var(--g)}
 .kids::before{content:"";position:absolute;top:0;left:50%;height:var(--g);border-left:2px solid var(--tl)}
 .tn{display:flex;flex-direction:column;align-items:center;position:relative;padding:var(--g) 8px 0}
-.tn:only-child{padding-top:0}
+.tn.o{padding-top:0}
 .tn::before,.tn::after{content:"";position:absolute;top:0;width:50%;height:var(--g);border-top:2px solid var(--tl)}
 .tn::before{right:50%}
 .tn::after{left:50%;border-left:2px solid var(--tl)}
-.tn:only-child::before,.tn:only-child::after{display:none}
-.tn:first-child::before,.tn:last-child::after{border:0}
-.tn:last-child::before{border-right:2px solid var(--tl)}
+.tn.o::before,.tn.o::after{display:none}
+.tn.f::before,.tn.l::after{border:0}
+.tn.l::before{border-right:2px solid var(--tl)}
 .kids.nobars{padding-top:0}
 .kids.nobars::before{display:none}
 .kids.nobars>.tn{padding-top:0}
@@ -240,13 +244,13 @@ h1{font-size:clamp(1.8rem,5.5vw,2.7rem);font-weight:700;letter-spacing:-.02em}
 
 /* ancestrais: linhas sobem */
 .an{display:flex;flex-direction:column;align-items:center;position:relative;padding:0 8px var(--g)}
-.an:only-child{padding-bottom:0}
+.an.o{padding-bottom:0}
 .an::before,.an::after{content:"";position:absolute;bottom:0;width:50%;height:var(--g);border-bottom:2px solid var(--tl)}
 .an::before{right:50%}
 .an::after{left:50%;border-left:2px solid var(--tl)}
-.an:only-child::before,.an:only-child::after{display:none}
-.an:first-child::before,.an:last-child::after{border:0}
-.an:last-child::before{border-right:2px solid var(--tl)}
+.an.o::before,.an.o::after{display:none}
+.an.f::before,.an.l::after{border:0}
+.an.l::before{border-right:2px solid var(--tl)}
 .an>.pars{padding-bottom:var(--g)}
 .an>.pars::after{content:"";position:absolute;bottom:0;left:50%;height:var(--g);border-left:2px solid var(--tl)}
 
@@ -255,7 +259,7 @@ h1{font-size:clamp(1.8rem,5.5vw,2.7rem);font-weight:700;letter-spacing:-.02em}
 .unit>.tcard+.tcard{margin-left:16px}
 .unit>.tcard+.tcard::before{content:"";position:absolute;left:-16px;top:50%;width:16px;border-top:2px solid var(--accent)}
 .tcard{
-  position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;
+  position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
   min-width:116px;max-width:172px;padding:8px 12px;border-radius:10px;
   border:1px solid var(--line);background:var(--surface);text-align:center;cursor:pointer;
 }
@@ -265,6 +269,26 @@ h1{font-size:clamp(1.8rem,5.5vw,2.7rem);font-weight:700;letter-spacing:-.02em}
 .tcard .tname{font-weight:600;line-height:1.2;overflow-wrap:anywhere}
 .tcard .td{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .tcard.focus .td{color:inherit;opacity:.9}
+
+/* zoom, tela cheia e PDF */
+.tzoom{position:relative;margin:0 auto}
+.tzoom>.tree{position:absolute;left:0;top:0;margin:0;transform-origin:0 0}
+.ttools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ttools .zl{min-width:3.4em;text-align:center;font-variant-numeric:tabular-nums;color:var(--muted);font-size:.92rem}
+.ttools .sp{flex:1 1 8px}
+.panel.full{max-width:none;height:100%;overflow:hidden;padding:14px;gap:10px}
+.fullbox{display:flex;flex-direction:column;gap:10px;height:100%;min-height:0;min-width:0}
+.fullhead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.fullhead h2{font-size:1.25rem}
+.panel.full .treewrap{flex:1;min-height:0}
+.pdfroot{
+  --bg:#FFFFFF;--surface:#FFFFFF;--line:#C9D3CD;--ink:#172622;--muted:#566660;
+  --accent:#0E6B5B;--accent-ink:#FFFFFF;--tree-line:#8EA39A;
+  background:#FFFFFF;color:#172622;padding:28px;font-family:var(--font-body);
+}
+.pdfroot .pt{font-family:var(--font-display);font-weight:700;font-size:28px;line-height:1.2}
+.pdfroot .ps{color:#566660;margin:4px 0 22px}
+.pdfroot .tree{position:relative;margin:0}
 
 .toast{
   position:fixed;left:50%;transform:translateX(-50%);
@@ -469,7 +493,7 @@ function openModal(content,wide){
   if(!root.firstChild) lastFocus=document.activeElement;
   root.replaceChildren(
     h('div',{class:'overlay',onmousedown:e=>{if(e.target===e.currentTarget) closeModal();}},
-      h('div',{class:'panel'+(wide?' wide':''),role:'dialog','aria-modal':'true','aria-labelledby':'mtitle'},content))
+      h('div',{class:'panel'+(wide?' wide':'')+(wide==='full'?' full':''),role:'dialog','aria-modal':'true','aria-labelledby':'mtitle'},content))
   );
   const first=root.querySelector('input:not([type=checkbox]),select,textarea');
   const panel=root.querySelector('.panel');
@@ -561,7 +585,7 @@ function treeCard(p,label,focus){
   const attrs={class:'tcard'+(focus?' focus':''),type:'button',
     'aria-label':(focus?'Selecionado: ':'Abrir ficha de ')+p.name+(label?' ('+label+')':'')};
   if(focus) attrs['aria-current']='true';
-  else attrs.onclick=()=>openFicha(p.id);
+  else attrs.onclick=()=>{if($('.panel.full')) openTreeFull(p.id); else openFicha(p.id);};
   return h('button',attrs,
     label?h('span',{class:'tl',text:label}):null,
     h('span',{class:'tname',text:p.name}),
@@ -577,36 +601,56 @@ function ancNode(p,gen,path){
   el.append(h('div',{class:'unit'},treeCard(p,ancLabel(gen,p),false)));
   return el;
 }
-function descNode(p,gen,path,focus){
+function coupleKids(p,spouses,np){
+  const seen=new Set();const kids=[];
+  for(const q of [p,...spouses]){
+    for(const c of childrenOf(q.id)){
+      if(!seen.has(c.id)&&!np.has(c.id)){seen.add(c.id);kids.push(c);}
+    }
+  }
+  return kids.sort(byAge);
+}
+function descNode(p,gen,path){
   const spouses=spousesOf(p.id).filter(s=>!path.has(s.id));
   const node=h('div',{class:'tn'},
-    h('div',{class:'unit'},treeCard(p,focus?null:descLabel(gen,p),focus),spouses.map(s=>treeCard(s,'Cônjuge',false))));
+    h('div',{class:'unit'},treeCard(p,descLabel(gen,p),false),spouses.map(s=>treeCard(s,'Cônjuge',false))));
   if(gen<5){
     const np=new Set(path);np.add(p.id);spouses.forEach(s=>np.add(s.id));
-    const seen=new Set();const kids=[];
-    for(const q of [p,...spouses]){
-      for(const c of childrenOf(q.id)){
-        if(!seen.has(c.id)&&!np.has(c.id)){seen.add(c.id);kids.push(c);}
-      }
-    }
-    kids.sort(byAge);
-    if(kids.length) node.append(h('div',{class:'kids'},kids.map(c=>descNode(c,gen+1,np,false))));
+    const kids=coupleKids(p,spouses,np);
+    if(kids.length) node.append(h('div',{class:'kids'},kids.map(c=>descNode(c,gen+1,np))));
   }
   return node;
+}
+function markSiblings(root){
+  root.querySelectorAll('.pars,.kids').forEach(box=>{
+    const items=[...box.children].filter(c=>c.classList.contains('an')||c.classList.contains('tn'));
+    items.forEach((c,i)=>{
+      if(items.length===1) c.classList.add('o');
+      if(i===0) c.classList.add('f');
+      if(i===items.length-1) c.classList.add('l');
+    });
+  });
 }
 function buildTree(id){
   const me=personById(id);
   const pars=parentsOf(id);
   const sibs=siblingsOf(id);
-  const tree=h('div',{class:'tree'});
+  const spouses=spousesOf(id);
+  const upper=h('div',{class:'upper'});
   if(pars.length){
     const path=new Set([id,...sibs.map(s=>s.id)]);
-    tree.append(h('div',{class:'pars'},pars.map(x=>ancNode(x,1,path))));
+    upper.append(h('div',{class:'pars'},pars.map(x=>ancNode(x,1,path))));
   }
   const row=[me,...sibs].sort(byAge).map(x=>x.id===id
-    ?descNode(me,0,new Set(),true)
+    ?h('div',{class:'tn focusnode'},h('div',{class:'unit'},treeCard(me,null,true),spouses.map(s=>treeCard(s,'Cônjuge',false))))
     :h('div',{class:'tn'},h('div',{class:'unit'},treeCard(x,pick(x,['Irmão','Irmã','Irmão(ã)']),false))));
-  tree.append(h('div',{class:'kids sibrow'+(pars.length?'':' nobars')},row));
+  upper.append(h('div',{class:'kids sibrow'+(pars.length?'':' nobars')},row));
+  const tree=h('div',{class:'tree'},upper);
+  const np=new Set([id,...spouses.map(s=>s.id)]);
+  const kids=coupleKids(me,spouses,np);
+  /* filhos e netos ficam num bloco próprio, alinhado ao centro da pessoa, para não afastar os irmãos */
+  if(kids.length) tree.append(h('div',{class:'kids descs'},kids.map(c=>descNode(c,1,np))));
+  markSiblings(tree);
   return tree;
 }
 function treeSection(id){
@@ -614,17 +658,190 @@ function treeSection(id){
   if(!parentsOf(id).length&&!siblingsOf(id).length&&!spousesOf(id).length&&!childrenOf(id).length){
     return h('p',{class:'muted',text:'Ainda não há parentes vinculados a '+p.name+'. Ao editar o cadastro, é possível vincular pais, filhos, cônjuge e irmãos.'});
   }
+  const w=h('div',{class:'treewrap',tabindex:'0',role:'region','aria-label':'Árvore genealógica de '+p.name},
+    h('div',{class:'tzoom'},buildTree(id)));
   return h('div',{class:'treebox'},
     h('p',{class:'hint',text:'Clique ou toque em uma pessoa para abrir a ficha dela.'}),
-    h('div',{class:'treewrap',tabindex:'0',role:'region','aria-label':'Árvore genealógica de '+p.name},buildTree(id)));
+    treeToolbar(w,id,false),
+    h('p',{class:'hint',id:'treehint',hidden:true,text:'A árvore é maior que a tela. Arraste ou deslize para os lados, ou use Ampliar.'}),
+    w);
 }
-function centerTree(){
-  requestAnimationFrame(()=>{
-    const w=$('.treewrap'),c=w&&$('.tcard.focus',w);
-    if(!c) return;
-    const wr=w.getBoundingClientRect(),cr=c.getBoundingClientRect();
-    w.scrollLeft+=(cr.left+cr.width/2)-(wr.left+wr.width/2);
+
+/* ---------- zoom ---------- */
+const ZMIN=0.3,ZMAX=2.5;
+function centerFocus(w){
+  const c=$('.tcard.focus',w);
+  if(!c) return;
+  const wr=w.getBoundingClientRect(),cr=c.getBoundingClientRect();
+  w.scrollLeft+=(cr.left+cr.width/2)-(wr.left+wr.width/2);
+}
+function setZoom(w,z,keep){
+  const t=$('.tree',w),zm=$('.tzoom',w);
+  if(!t||!zm) return;
+  z=Math.max(ZMIN,Math.min(ZMAX,z));
+  const old=w._z||1;
+  const cx=(w.scrollLeft+w.clientWidth/2)/old,cy=(w.scrollTop+w.clientHeight/2)/old;
+  w._z=z;
+  t.style.transform='scale('+z+')';
+  zm.style.width=Math.ceil(t.offsetWidth*z)+'px';
+  zm.style.height=Math.ceil(t.offsetHeight*z)+'px';
+  if(keep){w.scrollLeft=cx*z-w.clientWidth/2;w.scrollTop=cy*z-w.clientHeight/2;}
+  if(w._label) w._label.textContent=Math.round(z*100)+'%';
+  const hint=$('#treehint');
+  if(hint) hint.hidden=!(w.scrollWidth>w.clientWidth+2);
+}
+function fitZoom(w,both){
+  const t=$('.tree',w);
+  if(!t) return 1;
+  let z=(w.clientWidth-16)/t.offsetWidth;
+  if(both) z=Math.min(z,(w.clientHeight-16)/t.offsetHeight);
+  return Math.max(ZMIN,Math.min(both?1.25:1,z));
+}
+function treeToolbar(w,id,full){
+  const label=h('span',{class:'zl',text:'100%'});
+  w._label=label;
+  const btn=(text,aria,fn,cls)=>h('button',{class:'btn small'+(cls?' '+cls:''),type:'button','aria-label':aria,text,onclick:fn});
+  const pdf=btn('Baixar PDF','Baixar a árvore em PDF',e=>exportPdf(id,e.currentTarget),'primary');
+  return h('div',{class:'ttools'},
+    btn('−','Diminuir o zoom',()=>setZoom(w,(w._z||1)/1.2,true)),
+    label,
+    btn('+','Aumentar o zoom',()=>setZoom(w,(w._z||1)*1.2,true)),
+    btn('Ajustar','Ajustar a árvore à tela',()=>{setZoom(w,fitZoom(w,full),false);centerFocus(w);}),
+    h('span',{class:'sp'}),
+    full?null:btn('Ampliar','Ver a árvore em tela cheia',()=>openTreeFull(id)),
+    pdf);
+}
+
+/* ---------- posição, centralização e arraste ---------- */
+function layoutTree(w){
+  const tree=$('.tree',w),descs=tree&&$('.descs',tree),upper=tree&&$('.upper',tree),unit=tree&&$('.focusnode .unit',tree);
+  if(!upper||!unit) return;
+  const prev=tree.style.transform;
+  tree.style.transform='none';
+  upper.style.marginLeft='0px';
+  if(descs){
+    descs.style.marginLeft='0px';
+    const ur=upper.getBoundingClientRect(),fr=unit.getBoundingClientRect(),dr=descs.getBoundingClientRect();
+    const f=fr.left+fr.width/2-ur.left;
+    const left=f-dr.width/2;
+    const minX=Math.min(0,left);
+    upper.style.marginLeft=(-minX)+'px';
+    descs.style.marginLeft=(left-minX)+'px';
+  }
+  tree.style.transform=prev;
+}
+function fitTree(w){
+  if(!w||!w.isConnected) return;
+  layoutTree(w);
+  const full=!!w.closest('.full');
+  const first=!w._init;
+  w._init=true;
+  setZoom(w,first&&full?fitZoom(w,true):(w._z||1),false);
+  centerFocus(w);
+}
+function enablePan(w){
+  let down=false,sx=0,sy=0,sl=0,st=0,moved=false;
+  w.addEventListener('pointerdown',e=>{
+    if(e.pointerType!=='mouse'||e.button!==0) return;
+    down=true;moved=false;sx=e.clientX;sy=e.clientY;sl=w.scrollLeft;st=w.scrollTop;
   });
+  w.addEventListener('pointermove',e=>{
+    if(!down) return;
+    const dx=e.clientX-sx,dy=e.clientY-sy;
+    if(Math.abs(dx)>5||Math.abs(dy)>5) moved=true;
+    if(moved){w.scrollLeft=sl-dx;w.scrollTop=st-dy;}
+  });
+  const stop=()=>{down=false;};
+  w.addEventListener('pointerup',stop);
+  w.addEventListener('pointerleave',stop);
+  w.addEventListener('pointercancel',stop);
+  w.addEventListener('click',e=>{if(moved){e.preventDefault();e.stopPropagation();moved=false;}},true);
+  w.addEventListener('wheel',e=>{
+    if(!e.ctrlKey) return;
+    e.preventDefault();
+    setZoom(w,(w._z||1)*(e.deltaY<0?1.1:1/1.1),true);
+  },{passive:false});
+}
+function startTree(w){
+  if(!w) return;
+  if(!w.dataset.pan){w.dataset.pan='1';enablePan(w);}
+  requestAnimationFrame(()=>fitTree(w));
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>fitTree(w));
+}
+function centerTree(){startTree($('.treewrap'));}
+
+/* ---------- tela cheia ---------- */
+function openTreeFull(id){
+  const p=personById(id);
+  if(!p){closeModal();return;}
+  const w=h('div',{class:'treewrap',tabindex:'0',role:'region','aria-label':'Árvore genealógica de '+p.name},
+    h('div',{class:'tzoom'},buildTree(id)));
+  openModal(h('div',{class:'fullbox'},
+    h('div',{class:'fullhead'},
+      h('h2',{id:'mtitle',text:'Árvore de '+p.name}),
+      h('button',{class:'btn',type:'button',onclick:()=>openFicha(id),text:'Voltar'})),
+    treeToolbar(w,id,true),
+    w),'full');
+  startTree(w);
+}
+
+/* ---------- PDF ---------- */
+const PDF_LIBS=[
+  'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+];
+let pdfLibs=null;
+function loadScript(src){
+  return new Promise((ok,no)=>{
+    const s=document.createElement('script');
+    s.src=src;s.onload=ok;s.onerror=()=>no(new Error('Falha ao carregar '+src));
+    document.head.append(s);
+  });
+}
+function loadPdfLibs(){
+  if(window.html2canvas&&window.jspdf) return Promise.resolve();
+  if(!pdfLibs) pdfLibs=Promise.all(PDF_LIBS.map(loadScript)).catch(e=>{pdfLibs=null;throw e;});
+  return pdfLibs;
+}
+async function exportPdf(id,btn){
+  const p=personById(id),src=$('.treewrap .tree');
+  if(!p||!src) return;
+  const label=btn.textContent;
+  btn.disabled=true;btn.textContent='Gerando PDF…';
+  let host=null;
+  try{
+    await loadPdfLibs();
+    host=h('div',{class:'pdfroot'},
+      h('div',{class:'pt',text:'Árvore genealógica de '+p.name}),
+      h('div',{class:'ps',text:'Aniversários da família · gerado em '+new Date().toLocaleDateString('pt-BR')}));
+    const clone=src.cloneNode(true);
+    clone.style.transform='none';
+    host.append(clone);
+    host.style.cssText='position:fixed;left:-20000px;top:0;display:inline-block;';
+    document.body.append(host);
+    if(document.fonts&&document.fonts.ready) await document.fonts.ready;
+    const W=host.offsetWidth,H=host.offsetHeight;
+    const scale=Math.max(1,Math.min(3,Math.sqrt(16e6/(W*H)),8000/Math.max(W,H)));
+    const canvas=await window.html2canvas(host,{
+      backgroundColor:'#ffffff',scale,useCORS:true,logging:false,width:W,height:H,
+      windowWidth:Math.max(window.innerWidth,W+40),windowHeight:Math.max(window.innerHeight,H+40),
+      onclone:doc=>{const el=doc.querySelector('.pdfroot');if(el){el.style.left='0px';el.style.position='absolute';}}
+    });
+    const jsPDF=window.jspdf.jsPDF;
+    const pdf=new jsPDF({orientation:canvas.width>=canvas.height?'landscape':'portrait',unit:'mm',format:'a4'});
+    const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight(),m=8;
+    const r=Math.min((pw-2*m)/canvas.width,(ph-2*m)/canvas.height);
+    const iw=canvas.width*r,ih=canvas.height*r;
+    pdf.addImage(canvas.toDataURL('image/png'),'PNG',(pw-iw)/2,m,iw,ih,undefined,'FAST');
+    const slug=norm(p.name).replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'familia';
+    pdf.save('arvore-'+slug+'.pdf');
+    toast('PDF gerado.');
+  }catch(e){
+    toast('Não foi possível gerar o PDF. Confira a conexão e tente de novo.');
+  }finally{
+    if(host) host.remove();
+    btn.disabled=false;btn.textContent=label;
+  }
 }
 
 /* ---------- ficha ---------- */

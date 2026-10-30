@@ -284,8 +284,10 @@ h1{font-size:clamp(1.8rem,5.5vw,2.7rem);font-weight:700;letter-spacing:-.02em}
       <p class="meta" id="meta"></p>
     </div>
     <div class="actions" id="actions" hidden>
-      <button class="btn primary" id="btnAdd" type="button">Adicionar pessoa</button>
-      <button class="btn" id="btnSettings" type="button">Senha e acesso</button>
+      <button class="btn" id="btnLogin" type="button" hidden>Entrar para editar</button>
+      <button class="btn primary" id="btnAdd" type="button" hidden>Adicionar pessoa</button>
+      <button class="btn" id="btnSettings" type="button" hidden>Senha e acesso</button>
+      <button class="btn ghost" id="btnLogout" type="button" hidden>Sair</button>
     </div>
   </header>
 
@@ -314,7 +316,7 @@ h1{font-size:clamp(1.8rem,5.5vw,2.7rem);font-weight:700;letter-spacing:-.02em}
     <div id="list"></div>
   </main>
 
-  <p class="foot" id="foot">Todos veem a lista. Para incluir, alterar ou excluir é preciso a senha da família.</p>
+  <p class="foot" id="foot">Todos veem a lista. Para incluir, alterar ou excluir, use “Entrar para editar” e digite a senha da família.</p>
 </div>
 
 <div id="modalRoot"></div>
@@ -649,8 +651,8 @@ function openFicha(id){
       h('h3',{text:'Árvore genealógica'}),
       treeSection(id)),
     h('div',{class:'btns'},
-      h('button',{class:'btn danger',type:'button',onclick:()=>requireUnlock(()=>openDelete(id)),text:'Excluir'}),
-      h('button',{class:'btn primary',type:'button',onclick:()=>requireUnlock(()=>openForm(id)),text:'Editar'}),
+      isUnlocked()?h('button',{class:'btn danger',type:'button',onclick:()=>requireUnlock(()=>openDelete(id)),text:'Excluir'}):null,
+      isUnlocked()?h('button',{class:'btn primary',type:'button',onclick:()=>requireUnlock(()=>openForm(id)),text:'Editar'}):null,
       h('button',{class:'btn',type:'button',onclick:closeModal,text:'Fechar'}))),true);
   centerTree();
 }
@@ -890,8 +892,8 @@ function renderList(ready){
   if(!state.people.length){
     list.append(h('div',{class:'empty'},
       h('h2',{text:'Nenhum aniversário cadastrado ainda'}),
-      h('p',{text:'Comece por uma pessoa da família. Depois é possível vincular os parentes, como “filho(a) de”.'}),
-      h('button',{class:'btn primary',type:'button',text:'Adicionar a primeira pessoa',onclick:()=>requireUnlock(()=>openForm(null))})));
+      h('p',{text:isUnlocked()?'Comece por uma pessoa da família. Depois é possível vincular os parentes, como “filho(a) de”.':'Quando alguém da família cadastrar os aniversários, eles aparecem aqui.'}),
+      isUnlocked()?h('button',{class:'btn primary',type:'button',text:'Adicionar a primeira pessoa',onclick:()=>requireUnlock(()=>openForm(null))}):null));
     return;
   }
   const q=norm(state.q.trim());
@@ -930,7 +932,12 @@ function render(){
   const ready=!!(base&&!gated&&state.loaded);
   $('#lockScreen').hidden=!gated;
   $('#main').style.display=gated?'none':'flex';
+  const editing=isUnlocked();
   $('#actions').hidden=!ready;
+  $('#btnLogin').hidden=editing;
+  $('#btnAdd').hidden=!editing;
+  $('#btnSettings').hidden=!editing;
+  $('#btnLogout').hidden=!editing;
   let meta=fmtLong.format(new Date()).replace(/^./,c=>c.toUpperCase());
   if(ready){
     const n=state.people.length;
@@ -968,6 +975,11 @@ function syncPeople(){
 /* ---------- ligações ---------- */
 $('#btnAdd').addEventListener('click',()=>requireUnlock(()=>openForm(null)));
 $('#btnSettings').addEventListener('click',()=>requireUnlock(openSettings));
+$('#btnLogin').addEventListener('click',()=>openPassword(()=>{closeModal();toast('Edição liberada.');}));
+$('#btnLogout').addEventListener('click',async()=>{
+  try{await signOut(auth);}catch(x){}
+  state.authed=false;closeModal();render();toast('Edição bloqueada.');
+});
 $('#q').addEventListener('input',e=>{state.q=e.target.value;renderList(state.loaded);});
 $('#sortNext').addEventListener('click',()=>{state.sort='next';render();});
 $('#sortName').addEventListener('click',()=>{state.sort='name';render();});

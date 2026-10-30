@@ -26,6 +26,7 @@ body{margin:0}
   --danger:#B3261E;
   --danger-soft:#F7DEDC;
   --overlay:rgba(12,20,18,.48);
+  --tree-line:#9FB0A8;
   --font-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
   --font-body:'Source Sans 3',system-ui,-apple-system,'Segoe UI',sans-serif;
 }
@@ -34,14 +35,14 @@ body{margin:0}
     --bg:#101715;--surface:#18221F;--line:#2C3A36;--ink:#E6EEE9;--muted:#9AACA5;
     --accent:#4DBFA3;--accent-ink:#06211B;--accent-soft:#1D3A33;
     --warm-soft:#3A2F10;--warm-ink:#FBE9B5;--danger:#F2877F;--danger-soft:#3A1E1C;
-    --overlay:rgba(0,0,0,.62);color-scheme:dark;
+    --overlay:rgba(0,0,0,.62);--tree-line:#52665F;color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#101715;--surface:#18221F;--line:#2C3A36;--ink:#E6EEE9;--muted:#9AACA5;
   --accent:#4DBFA3;--accent-ink:#06211B;--accent-soft:#1D3A33;
   --warm-soft:#3A2F10;--warm-ink:#FBE9B5;--danger:#F2877F;--danger-soft:#3A1E1C;
-  --overlay:rgba(0,0,0,.62);color-scheme:dark;
+  --overlay:rgba(0,0,0,.62);--tree-line:#52665F;color-scheme:dark;
 }
 *{box-sizing:border-box}
 body{
@@ -191,6 +192,7 @@ h1{font-size:clamp(1.8rem,5.5vw,2.7rem);font-weight:700;letter-spacing:-.02em}
   background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;
   display:flex;flex-direction:column;gap:16px;
 }
+.panel:focus{outline:none}
 .panel h2{font-size:1.45rem;overflow-wrap:anywhere}
 .panel .lead{color:var(--muted)}
 .panel form{display:flex;flex-direction:column;gap:16px}
@@ -207,6 +209,62 @@ h1{font-size:clamp(1.8rem,5.5vw,2.7rem);font-weight:700;letter-spacing:-.02em}
 .relbtn .rl{color:var(--muted);font-size:.88rem}
 .relbtn:hover .rl{color:inherit}
 .note{background:var(--bg);border-radius:10px;padding:10px 12px;overflow-wrap:anywhere}
+
+/* árvore genealógica */
+.panel.wide{max-width:960px}
+.treebox{display:flex;flex-direction:column;gap:8px;min-width:0}
+.treewrap{
+  min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden;
+  padding:18px 8px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);
+}
+.tree{--g:22px;--tl:var(--tree-line);display:flex;flex-direction:column;align-items:center;width:max-content;min-width:100%}
+.pars,.kids{display:flex;justify-content:center;position:relative}
+.pars{align-items:flex-end}
+.kids{align-items:flex-start}
+
+/* descendentes e linha dos irmãos: linhas descem */
+.kids{padding-top:var(--g)}
+.kids::before{content:"";position:absolute;top:0;left:50%;height:var(--g);border-left:2px solid var(--tl)}
+.tn{display:flex;flex-direction:column;align-items:center;position:relative;padding:var(--g) 8px 0}
+.tn:only-child{padding-top:0}
+.tn::before,.tn::after{content:"";position:absolute;top:0;width:50%;height:var(--g);border-top:2px solid var(--tl)}
+.tn::before{right:50%}
+.tn::after{left:50%;border-left:2px solid var(--tl)}
+.tn:only-child::before,.tn:only-child::after{display:none}
+.tn:first-child::before,.tn:last-child::after{border:0}
+.tn:last-child::before{border-right:2px solid var(--tl)}
+.kids.nobars{padding-top:0}
+.kids.nobars::before{display:none}
+.kids.nobars>.tn{padding-top:0}
+.kids.nobars>.tn::before,.kids.nobars>.tn::after{display:none}
+
+/* ancestrais: linhas sobem */
+.an{display:flex;flex-direction:column;align-items:center;position:relative;padding:0 8px var(--g)}
+.an:only-child{padding-bottom:0}
+.an::before,.an::after{content:"";position:absolute;bottom:0;width:50%;height:var(--g);border-bottom:2px solid var(--tl)}
+.an::before{right:50%}
+.an::after{left:50%;border-left:2px solid var(--tl)}
+.an:only-child::before,.an:only-child::after{display:none}
+.an:first-child::before,.an:last-child::after{border:0}
+.an:last-child::before{border-right:2px solid var(--tl)}
+.an>.pars{padding-bottom:var(--g)}
+.an>.pars::after{content:"";position:absolute;bottom:0;left:50%;height:var(--g);border-left:2px solid var(--tl)}
+
+/* pessoa e casal */
+.unit{display:flex;align-items:stretch;justify-content:center}
+.unit>.tcard+.tcard{margin-left:16px}
+.unit>.tcard+.tcard::before{content:"";position:absolute;left:-16px;top:50%;width:16px;border-top:2px solid var(--accent)}
+.tcard{
+  position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;
+  min-width:116px;max-width:172px;padding:8px 12px;border-radius:10px;
+  border:1px solid var(--line);background:var(--surface);text-align:center;cursor:pointer;
+}
+.tcard:hover{border-color:var(--accent)}
+.tcard.focus{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);cursor:default}
+.tcard .tl{font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.tcard .tname{font-weight:600;line-height:1.2;overflow-wrap:anywhere}
+.tcard .td{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.tcard.focus .td{color:inherit;opacity:.9}
 
 .toast{
   position:fixed;left:50%;transform:translateX(-50%);
@@ -402,15 +460,17 @@ function toast(msg){
   const t=$('#toast');t.textContent=msg;t.classList.add('show');
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3400);
 }
-function openModal(content){
+function openModal(content,wide){
   const root=$('#modalRoot');
   if(!root.firstChild) lastFocus=document.activeElement;
   root.replaceChildren(
     h('div',{class:'overlay',onmousedown:e=>{if(e.target===e.currentTarget) closeModal();}},
-      h('div',{class:'panel',role:'dialog','aria-modal':'true','aria-labelledby':'mtitle'},content))
+      h('div',{class:'panel'+(wide?' wide':''),role:'dialog','aria-modal':'true','aria-labelledby':'mtitle'},content))
   );
-  const first=root.querySelector('input:not([type=checkbox]),select,textarea')||root.querySelector('button');
-  if(first) first.focus();
+  const first=root.querySelector('input:not([type=checkbox]),select,textarea');
+  const panel=root.querySelector('.panel');
+  if(first) first.focus({preventScroll:true});
+  else if(panel){panel.setAttribute('tabindex','-1');panel.focus({preventScroll:true});}
 }
 function closeModal(){
   $('#modalRoot').replaceChildren();
@@ -451,12 +511,123 @@ function openPassword(then){
     form));
 }
 
+/* ---------- árvore genealógica ---------- */
+const yearKey=p=>p.year?p.year:9999;
+const byAge=(a,b)=>yearKey(a)-yearKey(b)||byName(a,b);
+const personById=id=>state.people.find(p=>p.id===id);
+function parentsOf(id){
+  const me=personById(id);
+  const out=[];
+  for(const l of ((me&&me.links)||[])){
+    if(l.type!=='filho') continue;
+    const q=personById(l.to);
+    if(q&&q.id!==id&&!out.includes(q)) out.push(q);
+  }
+  return out.sort(byAge);
+}
+function childrenOf(id){
+  return state.people.filter(q=>q.id!==id&&(q.links||[]).some(l=>l.type==='filho'&&l.to===id)).sort(byAge);
+}
+function spousesOf(id){
+  const me=personById(id);
+  const ids=new Set();
+  for(const l of ((me&&me.links)||[])) if(l.type==='conjuge') ids.add(l.to);
+  for(const q of state.people) if(q.id!==id&&(q.links||[]).some(l=>l.type==='conjuge'&&l.to===id)) ids.add(q.id);
+  return state.people.filter(p=>p.id!==id&&ids.has(p.id)).sort(byAge);
+}
+function siblingsOf(id){
+  const me=personById(id);
+  const mine=new Set(parentsOf(id).map(p=>p.id));
+  const ids=new Set();
+  for(const q of state.people){
+    if(q.id===id) continue;
+    if(mine.size&&parentsOf(q.id).some(p=>mine.has(p.id))) ids.add(q.id);
+    if((q.links||[]).some(l=>l.type==='irmao'&&l.to===id)) ids.add(q.id);
+  }
+  for(const l of ((me&&me.links)||[])) if(l.type==='irmao') ids.add(l.to);
+  return state.people.filter(p=>p.id!==id&&ids.has(p.id)).sort(byAge);
+}
+const ANC=['Pai/mãe','Avô(ó)','Bisavô(ó)','Trisavô(ó)'];
+const DESC=['Filho(a)','Neto(a)','Bisneto(a)','Trineto(a)'];
+const ancLabel=n=>ANC[n-1]||'Ancestral';
+const descLabel=n=>DESC[n-1]||'Descendente';
+
+function treeCard(p,label,focus){
+  const date=p.day+' '+MONTHS_SHORT[p.month-1]+(p.year?' '+p.year:'');
+  const attrs={class:'tcard'+(focus?' focus':''),type:'button',
+    'aria-label':(focus?'Selecionado: ':'Abrir ficha de ')+p.name+(label?' ('+label+')':'')};
+  if(focus) attrs['aria-current']='true';
+  else attrs.onclick=()=>openFicha(p.id);
+  return h('button',attrs,
+    label?h('span',{class:'tl',text:label}):null,
+    h('span',{class:'tname',text:p.name}),
+    h('span',{class:'td',text:date}));
+}
+function ancNode(p,gen,path){
+  const el=h('div',{class:'an'});
+  const pars=gen<4?parentsOf(p.id).filter(x=>!path.has(x.id)):[];
+  if(pars.length){
+    const np=new Set(path);np.add(p.id);
+    el.append(h('div',{class:'pars'},pars.map(x=>ancNode(x,gen+1,np))));
+  }
+  el.append(h('div',{class:'unit'},treeCard(p,ancLabel(gen),false)));
+  return el;
+}
+function descNode(p,gen,path,focus){
+  const spouses=spousesOf(p.id).filter(s=>!path.has(s.id));
+  const node=h('div',{class:'tn'},
+    h('div',{class:'unit'},treeCard(p,focus?null:descLabel(gen),focus),spouses.map(s=>treeCard(s,'Cônjuge',false))));
+  if(gen<5){
+    const np=new Set(path);np.add(p.id);spouses.forEach(s=>np.add(s.id));
+    const seen=new Set();const kids=[];
+    for(const q of [p,...spouses]){
+      for(const c of childrenOf(q.id)){
+        if(!seen.has(c.id)&&!np.has(c.id)){seen.add(c.id);kids.push(c);}
+      }
+    }
+    kids.sort(byAge);
+    if(kids.length) node.append(h('div',{class:'kids'},kids.map(c=>descNode(c,gen+1,np,false))));
+  }
+  return node;
+}
+function buildTree(id){
+  const me=personById(id);
+  const pars=parentsOf(id);
+  const sibs=siblingsOf(id);
+  const tree=h('div',{class:'tree'});
+  if(pars.length){
+    const path=new Set([id,...sibs.map(s=>s.id)]);
+    tree.append(h('div',{class:'pars'},pars.map(x=>ancNode(x,1,path))));
+  }
+  const row=[me,...sibs].sort(byAge).map(x=>x.id===id
+    ?descNode(me,0,new Set(),true)
+    :h('div',{class:'tn'},h('div',{class:'unit'},treeCard(x,'Irmão(ã)',false))));
+  tree.append(h('div',{class:'kids sibrow'+(pars.length?'':' nobars')},row));
+  return tree;
+}
+function treeSection(id){
+  const p=personById(id);
+  if(!parentsOf(id).length&&!siblingsOf(id).length&&!spousesOf(id).length&&!childrenOf(id).length){
+    return h('p',{class:'muted',text:'Ainda não há parentes vinculados a '+p.name+'. Ao editar o cadastro, é possível vincular pais, filhos, cônjuge e irmãos.'});
+  }
+  return h('div',{class:'treebox'},
+    h('p',{class:'hint',text:'Clique ou toque em uma pessoa para abrir a ficha dela.'}),
+    h('div',{class:'treewrap',tabindex:'0',role:'region','aria-label':'Árvore genealógica de '+p.name},buildTree(id)));
+}
+function centerTree(){
+  requestAnimationFrame(()=>{
+    const w=$('.treewrap'),c=w&&$('.tcard.focus',w);
+    if(!c) return;
+    const wr=w.getBoundingClientRect(),cr=c.getBoundingClientRect();
+    w.scrollLeft+=(cr.left+cr.width/2)-(wr.left+wr.width/2);
+  });
+}
+
 /* ---------- ficha ---------- */
 function openFicha(id){
   const p=state.people.find(x=>x.id===id);
   if(!p){closeModal();return;}
   const inf=info(p);
-  const rels=relationsOf(id);
   const birth=p.day+' de '+MONTHS_LC[p.month-1]+(p.year?' de '+p.year:'');
   let ageLine;
   if(inf.turning!=null){
@@ -464,7 +635,7 @@ function openFicha(id){
   }else{
     ageLine='Faz aniversário '+dayText(inf.days);
   }
-  openModal(h('div',{style:'display:flex;flex-direction:column;gap:16px'},
+  openModal(h('div',{style:'display:flex;flex-direction:column;gap:16px;min-width:0'},
     h('h2',{id:'mtitle',text:p.name}),
     h('div',{class:'facts'},
       h('p',{class:'big',text:p.year?'Nasceu em '+birth:'Aniversário em '+birth}),
@@ -472,16 +643,14 @@ function openFicha(id){
       p.year?null:h('p',{class:'hint',text:'Ano de nascimento não informado.'}),
       inf.shifted?h('p',{class:'hint',text:'Em anos não bissextos, o aniversário é comemorado em 1º de março.'}):null),
     p.note?h('p',{class:'note',text:p.note}):null,
-    h('div',{class:'section'},
-      h('h3',{text:'Vínculos'}),
-      rels.length
-        ?h('div',{class:'chips'},rels.map(r=>h('button',{class:'relbtn',type:'button',onclick:()=>openFicha(r.id)},
-            h('span',{class:'rl',text:r.label}),h('span',{text:nameOf(r.id)}))))
-        :h('p',{class:'muted',text:'Nenhum vínculo cadastrado.'})),
+    h('div',{class:'section',style:'min-width:0'},
+      h('h3',{text:'Árvore genealógica'}),
+      treeSection(id)),
     h('div',{class:'btns'},
       h('button',{class:'btn danger',type:'button',onclick:()=>requireUnlock(()=>openDelete(id)),text:'Excluir'}),
       h('button',{class:'btn primary',type:'button',onclick:()=>requireUnlock(()=>openForm(id)),text:'Editar'}),
-      h('button',{class:'btn',type:'button',onclick:closeModal,text:'Fechar'}))));
+      h('button',{class:'btn',type:'button',onclick:closeModal,text:'Fechar'}))),true);
+  centerTree();
 }
 
 /* ---------- excluir ---------- */

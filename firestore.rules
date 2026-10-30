@@ -1,0 +1,44 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Conta da família: o e-mail abaixo tem que ser igual ao EDITOR_EMAIL de firebase-config.js
+    function isEditor() {
+      return request.auth != null
+        && request.auth.token.email == 'familia@aniversarios.app';
+    }
+
+    // Verdadeiro quando a lista foi bloqueada para quem não tem a senha
+    function isLocked() {
+      return exists(/databases/$(database)/documents/config/state)
+        && get(/databases/$(database)/documents/config/state).data.locked == true;
+    }
+
+    function validPerson(d) {
+      return d.keys().hasOnly(['name', 'day', 'month', 'year', 'note', 'links'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 80
+        && d.day is int && d.day >= 1 && d.day <= 31
+        && d.month is int && d.month >= 1 && d.month <= 12
+        && (d.year == null || (d.year is int && d.year >= 1900 && d.year <= 2100))
+        && d.note is string && d.note.size() <= 160
+        && d.links is list && d.links.size() <= 20;
+    }
+
+    // Pessoas: qualquer um lê, a menos que a lista esteja bloqueada.
+    // Só quem tem a senha da família grava.
+    match /people/{personId} {
+      allow read: if isEditor() || !isLocked();
+      allow create, update: if isEditor() && validPerson(request.resource.data);
+      allow delete: if isEditor();
+    }
+
+    // Estado da página (bloqueada ou não). Todos leem, só a família altera.
+    match /config/state {
+      allow read: if true;
+      allow write: if isEditor()
+        && request.resource.data.keys().hasOnly(['locked'])
+        && request.resource.data.locked is bool;
+    }
+  }
+}

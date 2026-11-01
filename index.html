@@ -218,49 +218,13 @@ h1{font-size:clamp(1.8rem,5.5vw,2.7rem);font-weight:700;letter-spacing:-.02em}
   scrollbar-width:thin;scrollbar-color:var(--tree-line) transparent;cursor:grab;user-select:none;
   padding:18px 8px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);
 }
-.tree{--g:22px;--tl:var(--tree-line);display:flex;flex-direction:column;align-items:flex-start;width:max-content;margin:0 auto}
-.upper{display:flex;flex-direction:column;align-items:center}
-.pars,.kids{display:flex;justify-content:center;position:relative}
-.pars{align-items:flex-end}
-.kids{align-items:flex-start}
-.kids.sibrow{align-items:stretch}
-.sibrow>.tn>.unit{flex:1}
-
-/* descendentes e linha dos irmãos: linhas descem */
-.kids{padding-top:var(--g)}
-.kids::before{content:"";position:absolute;top:0;left:50%;height:var(--g);border-left:2px solid var(--tl)}
-.tn{display:flex;flex-direction:column;align-items:center;position:relative;padding:var(--g) 8px 0}
-.tn.o{padding-top:0}
-.tn::before,.tn::after{content:"";position:absolute;top:0;width:50%;height:var(--g);border-top:2px solid var(--tl)}
-.tn::before{right:50%}
-.tn::after{left:50%;border-left:2px solid var(--tl)}
-.tn.o::before,.tn.o::after{display:none}
-.tn.f::before,.tn.l::after{border:0}
-.tn.l::before{border-right:2px solid var(--tl)}
-.kids.nobars{padding-top:0}
-.kids.nobars::before{display:none}
-.kids.nobars>.tn{padding-top:0}
-.kids.nobars>.tn::before,.kids.nobars>.tn::after{display:none}
-
-/* ancestrais: linhas sobem */
-.an{display:flex;flex-direction:column;align-items:center;position:relative;padding:0 8px var(--g)}
-.an.o{padding-bottom:0}
-.an::before,.an::after{content:"";position:absolute;bottom:0;width:50%;height:var(--g);border-bottom:2px solid var(--tl)}
-.an::before{right:50%}
-.an::after{left:50%;border-left:2px solid var(--tl)}
-.an.o::before,.an.o::after{display:none}
-.an.f::before,.an.l::after{border:0}
-.an.l::before{border-right:2px solid var(--tl)}
-.an>.pars{padding-bottom:var(--g)}
-.an>.pars::after{content:"";position:absolute;bottom:0;left:50%;height:var(--g);border-left:2px solid var(--tl)}
-
-/* pessoa e casal */
-.unit{display:flex;align-items:stretch;justify-content:center}
-.unit>.tcard+.tcard{margin-left:16px}
-.unit>.tcard+.tcard::before{content:"";position:absolute;left:-16px;top:50%;width:16px;border-top:2px solid var(--accent)}
+.tree{position:relative}
+.tree>.tcard{position:absolute;box-sizing:border-box}
+.tree>.ln{position:absolute;background:var(--tree-line);pointer-events:none}
+.tree>.ln.acc{background:var(--accent)}
 .tcard{
-  position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
-  min-width:116px;max-width:172px;padding:8px 12px;border-radius:10px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  padding:8px 10px;border-radius:10px;
   border:1px solid var(--line);background:var(--surface);text-align:center;cursor:pointer;
 }
 .tcard:hover{border-color:var(--accent)}
@@ -591,63 +555,175 @@ function treeCard(p,label,focus){
     h('span',{class:'tname',text:p.name}),
     h('span',{class:'td',text:date}));
 }
-function ancNode(p,gen,path){
-  const el=h('div',{class:'an'});
-  const pars=gen<4?parentsOf(p.id).filter(x=>!path.has(x.id)):[];
-  if(pars.length){
-    const np=new Set(path);np.add(p.id);
-    el.append(h('div',{class:'pars'},pars.map(x=>ancNode(x,gen+1,np))));
+/* ---------- desenho da árvore ----------
+   Cada pessoa é um cartão de largura fixa. planTree calcula a posição horizontal de todos
+   e layoutTree calcula as alturas e desenha as linhas entre uma geração e a seguinte. */
+const CW=140,HG=16,UG=24,RG=54,PADX=14,PADT=14;
+const TIO=['Tio','Tia','Tio(a)'],PRIMO=['Primo','Prima','Primo(a)'];
+
+function nodeMeasure(n){
+  if(!n.uw) n.uw=CW;
+  n.kids.forEach(nodeMeasure);
+  if(!n.kids.length){n.W=n.uw;n.cx=n.uw/2;return;}
+  let x=0;
+  for(const k of n.kids){k.off=x;x+=k.W+HG;}
+  const f=n.kids[0],l=n.kids[n.kids.length-1];
+  const mid=((f.off+f.cx)+(l.off+l.cx))/2;
+  const left=Math.min(0,mid-n.uw/2),right=Math.max(x-HG,mid+n.uw/2);
+  n.shift=-left;n.cx=mid-left;n.W=right-left;
+}
+function nodePlace(n,L){
+  n.place(L+n.cx);
+  for(const k of n.kids) nodePlace(k,L+(n.shift||0)+k.off);
+}
+const unitWidth=u=>u.length*CW+(u.length-1)*UG;
+function unitPlace(unit){
+  return cx=>{
+    const start=cx-unitWidth(unit)/2+CW/2;
+    unit.forEach((it,i)=>{it.x=start+i*(CW+UG);});
+  };
+}
+function freeSlot(occ,w,target){
+  const iv=occ.map(it=>[it.x-CW/2-HG,it.x+CW/2+HG]).sort((a,b)=>a[0]-b[0]);
+  const merged=[];
+  for(const v of iv){
+    const l=merged[merged.length-1];
+    if(l&&v[0]<=l[1]) l[1]=Math.max(l[1],v[1]); else merged.push([v[0],v[1]]);
   }
-  el.append(h('div',{class:'unit'},treeCard(p,ancLabel(gen,p),false)));
-  return el;
-}
-/* só os filhos vinculados à própria pessoa: filhos que o cônjuge teve com outra pessoa não entram */
-function coupleKids(p,spouses,np){
-  return childrenOf(p.id).filter(c=>!np.has(c.id)).sort(byAge);
-}
-function descNode(p,gen,path){
-  const spouses=spousesOf(p.id).filter(s=>!path.has(s.id));
-  const node=h('div',{class:'tn'},
-    h('div',{class:'unit'},treeCard(p,descLabel(gen,p),false),spouses.map(s=>treeCard(s,'Cônjuge',false))));
-  if(gen<5){
-    const np=new Set(path);np.add(p.id);spouses.forEach(s=>np.add(s.id));
-    const kids=coupleKids(p,spouses,np);
-    if(kids.length) node.append(h('div',{class:'kids'},kids.map(c=>descNode(c,gen+1,np))));
+  const gaps=[];let prev=-Infinity;
+  for(const m of merged){gaps.push([prev,m[0]]);prev=m[1];}
+  gaps.push([prev,Infinity]);
+  let best=null;
+  for(const [a,b] of gaps){
+    const lo=a+w/2,hi=b-w/2;
+    if(lo>hi) continue;
+    const c=Math.min(hi,Math.max(lo,target));
+    if(best===null||Math.abs(c-target)<Math.abs(best-target)) best=c;
   }
-  return node;
+  return best===null?target:best;
 }
-function markSiblings(root){
-  root.querySelectorAll('.pars,.kids').forEach(box=>{
-    const items=[...box.children].filter(c=>c.classList.contains('an')||c.classList.contains('tn'));
-    items.forEach((c,i)=>{
-      if(items.length===1) c.classList.add('o');
-      if(i===0) c.classList.add('f');
-      if(i===items.length-1) c.classList.add('l');
+
+function planTree(id){
+  const me=personById(id);
+  const items=[],links=[],units=[];
+  const placed=new Set();
+  const free=p=>!placed.has(p.id);
+  const add=(p,label,row,focus)=>{const it={p,label,row,focus:!!focus,x:0};items.push(it);placed.add(p.id);return it;};
+
+  /* a pessoa, o cônjuge, os irmãos e os pais */
+  const focusItem=add(me,null,0,true);
+  const focusUnit=[focusItem,...spousesOf(id).filter(free).map(s=>add(s,'Cônjuge',0))];
+  units.push(focusUnit);
+  const sibItems=siblingsOf(id).filter(free).map(s=>add(s,pick(s,['Irmão','Irmã','Irmão(ã)']),0));
+  const parItems=parentsOf(id).filter(free).map(p=>add(p,ancLabel(1,p),-1));
+
+  /* avós, bisavós...: cada um fica acima de quem descende dele */
+  const ancPlan=(p,depth)=>{
+    const it=add(p,ancLabel(depth,p),-depth);
+    const n={person:it,uw:CW,kids:[],place:cx=>{it.x=cx;}};
+    if(depth<4) for(const g of parentsOf(p.id).filter(free)) n.kids.push(ancPlan(g,depth+1));
+    if(n.kids.length) links.push({parents:n.kids.map(k=>k.person),children:[it]});
+    return n;
+  };
+
+  /* um lado por pai ou mãe: tios ao lado dele, avós acima, primos abaixo de cada tio */
+  const sides=parItems.map((pi,i)=>{
+    const start=items.length;
+    const tios=siblingsOf(pi.p.id).filter(free).map(t=>add(t,pick(t,TIO),-1));
+    const cousins=tios.map(t=>childrenOf(t.p.id).filter(free).map(c=>add(c,pick(c,PRIMO),0)));
+    const cols=tios.map((t,k)=>({it:t,cs:cousins[k],w:Math.max(CW,cousins[k].length?cousins[k].length*CW+(cousins[k].length-1)*HG:0)}));
+    const pcol={it:pi,cs:[],w:CW};
+    const order=i===0?[...cols,pcol]:[pcol,...cols];
+    const Ws=order.reduce((a,c)=>a+c.w,0)+HG*(order.length-1);
+    const gnodes=parentsOf(pi.p.id).filter(free).map(g=>ancPlan(g,2));
+    const node={uw:Ws,kids:gnodes,place:cx=>{
+      let x=cx-Ws/2;
+      for(const c of order){
+        const mid=x+c.w/2;
+        c.it.x=mid;
+        const n=c.cs.length;
+        c.cs.forEach((cc,j)=>{cc.x=mid-(n*CW+(n-1)*HG)/2+CW/2+j*(CW+HG);});
+        x+=c.w+HG;
+      }
+    }};
+    nodeMeasure(node);nodePlace(node,0);
+    if(gnodes.length) links.push({parents:gnodes.map(g=>g.person),children:order.map(c=>c.it)});
+    tios.forEach((t,k)=>{if(cousins[k].length) links.push({parents:[t],children:cousins[k]});});
+    const mine=[pi,...items.slice(start)];
+    const dx=-pi.x;
+    mine.forEach(it=>{it.x+=dx;});
+    const ext=new Map();
+    mine.forEach(it=>{
+      const e=ext.get(it.row)||{l:Infinity,r:-Infinity};
+      e.l=Math.min(e.l,it.x-CW/2);e.r=Math.max(e.r,it.x+CW/2);
+      ext.set(it.row,e);
     });
+    return {pi,mine,ext};
   });
+
+  /* distância entre os lados, para nada se sobrepor */
+  const seq=[...sibItems.map(s=>({it:s,w:CW})),{unit:focusUnit,it:focusItem,w:unitWidth(focusUnit)}]
+    .sort((a,b)=>byAge(a.it.p,b.it.p));
+  const Wsib=seq.reduce((a,b)=>a+b.w,0)+HG*(seq.length-1);
+  const offs=[];
+  sides.forEach((sd,i)=>{
+    if(i===0){offs.push(0);return;}
+    let need=offs[i-1]+CW+HG;
+    for(const [r,e] of sd.ext){
+      for(let k=0;k<i;k++){
+        const o=sides[k].ext.get(r);
+        if(o) need=Math.max(need,offs[k]+o.r+HG-e.l);
+      }
+    }
+    if(sides.length===2){
+      const a=sides[0].ext.get(0),b=sd.ext.get(0);
+      if(a) need=Math.max(need,2*(a.r+HG)+Wsib);
+      if(b) need=Math.max(need,Wsib+2*(HG-b.l));
+    }
+    offs.push(need);
+  });
+  sides.forEach((sd,i)=>sd.mine.forEach(it=>{it.x+=offs[i];}));
+
+  /* irmãos e a pessoa ficam abaixo dos pais, no espaço livre da linha */
+  const J=sides.length?(sides[0].pi.x+sides[sides.length-1].pi.x)/2:0;
+  const occ=items.filter(it=>it.row===0&&!focusUnit.includes(it)&&!sibItems.includes(it));
+  const c=freeSlot(occ,Wsib,J);
+  let x=c-Wsib/2,focusCx=c;
+  for(const b of seq){
+    if(b.unit){unitPlace(b.unit)(x+b.w/2);focusCx=x+b.w/2;}
+    else b.it.x=x+b.w/2;
+    x+=b.w+HG;
+  }
+  if(parItems.length) links.push({parents:parItems,children:[...sibItems,focusItem]});
+
+  /* filhos, netos...: só os vinculados à própria pessoa */
+  const descPlan=(p,gen)=>{
+    const pit=add(p,descLabel(gen,p),gen);
+    const unit=[pit,...spousesOf(p.id).filter(free).map(s=>add(s,'Cônjuge',gen))];
+    units.push(unit);
+    const n={person:pit,unit,uw:unitWidth(unit),kids:[],place:unitPlace(unit)};
+    if(gen<5) for(const k of childrenOf(p.id).filter(free)) n.kids.push(descPlan(k,gen+1));
+    if(n.kids.length) links.push({parents:[pit],children:n.kids.map(k=>k.person)});
+    return n;
+  };
+  const root={person:focusItem,unit:focusUnit,uw:unitWidth(focusUnit),kids:[],place:unitPlace(focusUnit)};
+  for(const k of childrenOf(id).filter(free)) root.kids.push(descPlan(k,1));
+  if(root.kids.length) links.push({parents:[focusItem],children:root.kids.map(k=>k.person)});
+  nodeMeasure(root);nodePlace(root,focusCx-root.cx);
+  return {items,links,units};
 }
 function buildTree(id){
-  const me=personById(id);
-  const pars=parentsOf(id);
-  const sibs=siblingsOf(id);
-  const spouses=spousesOf(id);
-  const upper=h('div',{class:'upper'});
-  if(pars.length){
-    const path=new Set([id,...sibs.map(s=>s.id)]);
-    upper.append(h('div',{class:'pars'},pars.map(x=>ancNode(x,1,path))));
+  const plan=planTree(id);
+  const tree=h('div',{class:'tree'});
+  for(const it of plan.items){
+    it.el=treeCard(it.p,it.label,it.focus);
+    it.el.style.width=CW+'px';
+    tree.append(it.el);
   }
-  const row=[me,...sibs].sort(byAge).map(x=>x.id===id
-    ?h('div',{class:'tn focusnode'},h('div',{class:'unit'},treeCard(me,null,true),spouses.map(s=>treeCard(s,'Cônjuge',false))))
-    :h('div',{class:'tn'},h('div',{class:'unit'},treeCard(x,pick(x,['Irmão','Irmã','Irmão(ã)']),false))));
-  upper.append(h('div',{class:'kids sibrow'+(pars.length?'':' nobars')},row));
-  const tree=h('div',{class:'tree'},upper);
-  const np=new Set([id,...spouses.map(s=>s.id)]);
-  const kids=coupleKids(me,spouses,np);
-  /* filhos e netos ficam num bloco próprio, alinhado ao centro da pessoa, para não afastar os irmãos */
-  if(kids.length) tree.append(h('div',{class:'kids descs'},kids.map(c=>descNode(c,1,np))));
-  markSiblings(tree);
+  tree._plan=plan;
   return tree;
 }
+
 function treeSection(id){
   const p=personById(id);
   if(!parentsOf(id).length&&!siblingsOf(id).length&&!spousesOf(id).length&&!childrenOf(id).length){
@@ -709,21 +785,57 @@ function treeToolbar(w,id,full){
 
 /* ---------- posição, centralização e arraste ---------- */
 function layoutTree(w){
-  const tree=$('.tree',w),descs=tree&&$('.descs',tree),upper=tree&&$('.upper',tree),unit=tree&&$('.focusnode .unit',tree);
-  if(!upper||!unit) return;
-  const prev=tree.style.transform;
-  tree.style.transform='none';
-  upper.style.marginLeft='0px';
-  if(descs){
-    descs.style.marginLeft='0px';
-    const ur=upper.getBoundingClientRect(),fr=unit.getBoundingClientRect(),dr=descs.getBoundingClientRect();
-    const f=fr.left+fr.width/2-ur.left;
-    const left=f-dr.width/2;
-    const minX=Math.min(0,left);
-    upper.style.marginLeft=(-minX)+'px';
-    descs.style.marginLeft=(left-minX)+'px';
+  const tree=$('.tree',w);
+  if(!tree||!tree._plan) return;
+  const {items,links,units}=tree._plan;
+  tree.querySelectorAll('.ln').forEach(e=>e.remove());
+  items.forEach(it=>{it.el.style.height='auto';});
+  const rowH=new Map();
+  items.forEach(it=>rowH.set(it.row,Math.max(rowH.get(it.row)||0,it.el.offsetHeight)));
+  const top=new Map();
+  let y=PADT;
+  [...rowH.keys()].sort((a,b)=>a-b).forEach(r=>{top.set(r,y);y+=rowH.get(r)+RG;});
+  let minX=Infinity,maxX=-Infinity;
+  items.forEach(it=>{minX=Math.min(minX,it.x-CW/2);maxX=Math.max(maxX,it.x+CW/2);});
+  const dx=PADX-minX;
+  const cx=it=>Math.round(it.x+dx);
+  items.forEach(it=>{
+    it.el.style.left=(cx(it)-CW/2)+'px';
+    it.el.style.top=top.get(it.row)+'px';
+    it.el.style.height=rowH.get(it.row)+'px';
+  });
+  tree.style.width=Math.ceil(maxX-minX+2*PADX)+'px';
+  tree.style.height=Math.ceil(y-RG+PADT)+'px';
+  const ln=(x,yy,ww,hh,acc)=>{
+    const d=h('div',{class:'ln'+(acc?' acc':'')});
+    d.style.cssText='left:'+x+'px;top:'+yy+'px;width:'+ww+'px;height:'+hh+'px';
+    tree.append(d);
+  };
+  const hl=(x1,x2,yy,acc)=>ln(Math.min(x1,x2)-1,yy-1,Math.abs(x2-x1)+2,2,acc);
+  const vl=(x,y1,y2)=>ln(x-1,Math.min(y1,y2),2,Math.abs(y2-y1));
+  for(const u of units){
+    for(let i=1;i<u.length;i++){
+      const a=u[i-1],b=u[i],r=a.row;
+      hl(cx(a)+CW/2,cx(b)-CW/2,top.get(r)+Math.round(rowH.get(r)/2),true);
+    }
   }
-  tree.style.transform=prev;
+  for(const l of links){
+    const pr=l.parents[0].row,cr=l.children[0].row;
+    const pb=top.get(pr)+rowH.get(pr),ct=top.get(cr);
+    const barY=pb+Math.round(RG*0.56),convY=pb+Math.round(RG*0.26);
+    const pxs=l.parents.map(cx);
+    let px;
+    if(pxs.length>1){
+      const a=Math.min(...pxs),b=Math.max(...pxs);
+      pxs.forEach(x=>vl(x,pb,convY));
+      hl(a,b,convY);
+      px=Math.round((a+b)/2);
+      vl(px,convY,barY);
+    }else{px=pxs[0];vl(px,pb,barY);}
+    const cxs=l.children.map(cx);
+    hl(Math.min(px,...cxs),Math.max(px,...cxs),barY);
+    cxs.forEach(x=>vl(x,barY,ct));
+  }
 }
 function fitTree(w){
   if(!w||!w.isConnected) return;

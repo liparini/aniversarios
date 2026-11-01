@@ -601,14 +601,9 @@ function ancNode(p,gen,path){
   el.append(h('div',{class:'unit'},treeCard(p,ancLabel(gen,p),false)));
   return el;
 }
+/* só os filhos vinculados à própria pessoa: filhos que o cônjuge teve com outra pessoa não entram */
 function coupleKids(p,spouses,np){
-  const seen=new Set();const kids=[];
-  for(const q of [p,...spouses]){
-    for(const c of childrenOf(q.id)){
-      if(!seen.has(c.id)&&!np.has(c.id)){seen.add(c.id);kids.push(c);}
-    }
-  }
-  return kids.sort(byAge);
+  return childrenOf(p.id).filter(c=>!np.has(c.id)).sort(byAge);
 }
 function descNode(p,gen,path){
   const spouses=spousesOf(p.id).filter(s=>!path.has(s.id));
